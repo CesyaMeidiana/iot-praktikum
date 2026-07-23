@@ -167,39 +167,36 @@ class PraktikumController extends Controller
         'actuatorLogs.actuator',
     ])->findOrFail($id);
 
+    // >>> PINDAHIN KE SINI, SEBELUM LOOP <
+    $sensorColumns = $session->sensorLogs->map(fn ($l) => $l->sensor->parameter ?? $l->sensor->nama_sensor)->unique()->values();
+    $actuatorColumns = $session->actuatorLogs->map(fn ($l) => $l->actuator->nama_aktuator)->unique()->values();
+
     $qosLogs = $session->getQosLogs();
     $rows = [];
 
-$logs = \App\Models\MonitoringLog::where('praktikum_session_id', $session->id)
-    ->orderBy('created_at')
-    ->get();
+    $logs = \App\Models\MonitoringLog::with('device')
+        ->where('praktikum_session_id', $session->id)
+        ->orderBy('created_at')
+        ->get();
 
-foreach ($logs as $log) {
+    foreach ($logs as $log) {
+        $readings = $log->readings ?? [];
 
-    $rows[] = [
+        $sensorData   = collect($readings)->only($sensorColumns->all())->all();
+        $actuatorData = collect($readings)->only($actuatorColumns->all())->all();
 
-        'timestamp'  => $log->created_at,
-
-        'packet'     => $log->packet_id,
-
-        'sensor'     => $log->readings['sensor'] ?? [],
-
-        'aktuator'   => $log->readings['aktuator'] ?? [],
-
-        'delay'      => $log->delay,
-
-        'jitter'     => $log->jitter,
-
-        'throughput' => $log->throughput,
-
-        'loss'       => $log->packet_loss,
-
-    ];
-
-}
-
-    $sensorColumns = $session->sensorLogs->map(fn ($l) => $l->sensor->parameter ?? $l->sensor->nama_sensor)->unique()->values();
-    $actuatorColumns = $session->actuatorLogs->map(fn ($l) => $l->actuator->nama_aktuator)->unique()->values();
+        $rows[] = [
+            'timestamp'  => $log->created_at,
+            'packet'     => $log->packet_id,
+            'device'     => $log->device->nama_device ?? '-',
+            'sensor'     => $sensorData,
+            'aktuator'   => $actuatorData,
+            'delay'      => $log->delay,
+            'jitter'     => $log->jitter,
+            'throughput' => $log->throughput,
+            'loss'       => $log->packet_loss,
+        ];
+    }
 
     $lastLogTime = $session->sensorLogs->max('created_at');
     $isDeviceOnline = $lastLogTime && $lastLogTime->gt(now()->subSeconds(15));
@@ -208,7 +205,6 @@ foreach ($logs as $log) {
         'session', 'rows', 'sensorColumns', 'actuatorColumns', 'isDeviceOnline'
     ));
 }
-
     public function active()
     {
         $session = PraktikumSession::where('user_id', auth()->id())
@@ -333,18 +329,31 @@ foreach ($logs as $log) {
         ->get();
 
     $rows = [];
-    foreach ($logs as $log) {
-        $rows[] = [
-            'timestamp'  => $log->created_at,
-            'packet'     => $log->packet_id,
-            'sensor'     => $log->readings['sensor'] ?? [],
-            'aktuator'   => $log->readings['aktuator'] ?? [],
-            'delay'      => $log->delay,
-            'jitter'     => $log->jitter,
-            'throughput' => $log->throughput,
-            'loss'       => $log->packet_loss,
-        ];
-    }
+    $logs = \App\Models\MonitoringLog::with('device')  // <-- eager load biar gak N+1
+    ->where('praktikum_session_id', $session->id)
+    ->orderBy('created_at')
+    ->get();
+
+foreach ($logs as $log) {
+    $readings = $log->readings ?? [];
+
+    // Pisahkan flat readings jadi sensor vs aktuator
+    // berdasarkan nama kolom yang udah diketahui dari $sensorColumns/$actuatorColumns
+    $sensorData   = collect($readings)->only($sensorColumns->all())->all();
+    $actuatorData = collect($readings)->only($actuatorColumns->all())->all();
+
+    $rows[] = [
+        'timestamp'  => $log->created_at,
+        'packet'     => $log->packet_id,
+        'device'     => $log->device->nama_device ?? '-',   // <-- NEW: buat kolom ED
+        'sensor'     => $sensorData,
+        'aktuator'   => $actuatorData,
+        'delay'      => $log->delay,
+        'jitter'     => $log->jitter,
+        'throughput' => $log->throughput,
+        'loss'       => $log->packet_loss,
+    ];
+}
 
     $sensorColumns = $session->sensorLogs->map(fn ($l) => $l->sensor->parameter ?? $l->sensor->nama_sensor)->unique()->values();
     $actuatorColumns = $session->actuatorLogs->map(fn ($l) => $l->actuator->nama_aktuator)->unique()->values();

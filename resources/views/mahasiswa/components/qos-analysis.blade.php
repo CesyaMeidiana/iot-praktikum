@@ -1,4 +1,6 @@
 {{-- Grafik QoS Praktikum (Realtime, sliding window) --}}
+
+{{-- Filter praktikum (dipakai bareng oleh ketiga chart di bawah) --}}
 <div class="bg-white rounded-xl shadow p-6 mb-8">
     <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
         <h2 class="text-xl font-bold">Grafik QoS Praktikum</h2>
@@ -16,9 +18,38 @@
             </form>
         @endif
     </div>
+</div>
 
-    <div class="relative" style="height: 320px;">
-        <canvas id="qosAnalysisChart"></canvas>
+{{-- Box 1: Throughput --}}
+<div class="bg-white rounded-xl shadow p-6 mb-8">
+    <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
+        <h2 class="text-xl font-bold">Throughput</h2>
+    </div>
+
+    <div class="relative" style="height: 360px;">
+        <canvas id="qosThroughputChart"></canvas>
+    </div>
+</div>
+
+{{-- Box 2: Delay & Jitter --}}
+<div class="bg-white rounded-xl shadow p-6 mb-8">
+    <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
+        <h2 class="text-xl font-bold">Delay & Jitter</h2>
+    </div>
+
+    <div class="relative" style="height: 360px;">
+        <canvas id="qosDelayJitterChart"></canvas>
+    </div>
+</div>
+
+{{-- Box 3: Packet Loss --}}
+<div class="bg-white rounded-xl shadow p-6 mb-8">
+    <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
+        <h2 class="text-xl font-bold">Packet Loss</h2>
+    </div>
+
+    <div class="relative" style="height: 360px;">
+        <canvas id="qosLossChart"></canvas>
     </div>
 </div>
 
@@ -49,10 +80,24 @@
     const jitter     = trim(initialJitter);
     const loss       = trim(initialLoss);
 
-    const canvas = document.getElementById('qosAnalysisChart');
-    if (!canvas || typeof Chart === 'undefined') return;
+    const throughputCanvas   = document.getElementById('qosThroughputChart');
+    const delayJitterCanvas  = document.getElementById('qosDelayJitterChart');
+    const lossCanvas         = document.getElementById('qosLossChart');
 
-    const qosAnalysisChart = new Chart(canvas, {
+    if (!throughputCanvas || !delayJitterCanvas || !lossCanvas || typeof Chart === 'undefined') return;
+
+    const baseOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 300 },
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 10, padding: 16 } },
+        },
+    };
+
+    // Chart 1: Throughput
+    const qosThroughputChart = new Chart(throughputCanvas, {
         type: 'line',
         data: {
             labels: labels,
@@ -62,17 +107,39 @@
                     data: throughput,
                     borderColor: '#2563eb',
                     backgroundColor: 'rgba(37,99,235,0.08)',
-                    yAxisID: 'yThroughput',
                     tension: 0.35,
                     fill: true,
                     pointRadius: 2,
                 },
+            ],
+        },
+        options: {
+            ...baseOptions,
+            scales: {
+                x: {
+                    title: { display: true, text: 'Nomor Paket (Packet)' },
+                },
+                y: {
+                    type: 'linear',
+                    title: { display: true, text: 'Throughput (kbps)' },
+                    grid: { color: '#f1f5f9' },
+                    beginAtZero: true,
+                },
+            },
+        },
+    });
+
+    // Chart 2: Delay & Jitter
+    const qosDelayJitterChart = new Chart(delayJitterCanvas, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
                 {
                     label: 'Delay (ms)',
                     data: delay,
                     borderColor: '#f97316',
                     backgroundColor: 'rgba(249,115,22,0.08)',
-                    yAxisID: 'yOther',
                     tension: 0.35,
                     fill: false,
                     pointRadius: 2,
@@ -82,17 +149,6 @@
                     data: jitter,
                     borderColor: '#a855f7',
                     backgroundColor: 'rgba(168,85,247,0.08)',
-                    yAxisID: 'yOther',
-                    tension: 0.35,
-                    fill: false,
-                    pointRadius: 2,
-                },
-                {
-                    label: 'Packet Loss (%)',
-                    data: loss,
-                    borderColor: '#ef4444',
-                    backgroundColor: 'rgba(239,68,68,0.08)',
-                    yAxisID: 'yOther',
                     tension: 0.35,
                     fill: false,
                     pointRadius: 2,
@@ -100,25 +156,47 @@
             ],
         },
         options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: { duration: 300 },
-            interaction: { mode: 'index', intersect: false },
-            plugins: {
-                legend: { position: 'bottom', labels: { boxWidth: 10, padding: 16 } },
-            },
+            ...baseOptions,
             scales: {
-                yThroughput: {
+                x: {
+                    title: { display: true, text: 'Nomor Paket (Packet)' },
+                },
+                y: {
                     type: 'linear',
-                    position: 'left',
-                    title: { display: true, text: 'Throughput (kbps)' },
-                    grid: { drawOnChartArea: false },
+                    title: { display: true, text: 'Delay / Jitter (ms)' },
+                    grid: { color: '#f1f5f9' },
                     beginAtZero: true,
                 },
-                yOther: {
+            },
+        },
+    });
+
+    // Chart 3: Packet Loss
+    const qosLossChart = new Chart(lossCanvas, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Packet Loss (%)',
+                    data: loss,
+                    borderColor: '#ef4444',
+                    backgroundColor: 'rgba(239,68,68,0.08)',
+                    tension: 0.35,
+                    fill: true,
+                    pointRadius: 2,
+                },
+            ],
+        },
+        options: {
+            ...baseOptions,
+            scales: {
+                x: {
+                    title: { display: true, text: 'Nomor Paket (Packet)' },
+                },
+                y: {
                     type: 'linear',
-                    position: 'right',
-                    title: { display: true, text: 'Delay / Jitter / Loss' },
+                    title: { display: true, text: 'Packet Loss (%)' },
                     grid: { color: '#f1f5f9' },
                     beginAtZero: true,
                 },
@@ -153,14 +231,22 @@
         packetCounter += 1;
         const nextLabel = 'P' + (q.packet ?? packetCounter);
 
-        pushPoint(qosAnalysisChart.data.labels, nextLabel);
-        pushPoint(qosAnalysisChart.data.datasets[0].data, Number(q.throughput));
-        pushPoint(qosAnalysisChart.data.datasets[1].data, Number(q.delay));
-        pushPoint(qosAnalysisChart.data.datasets[2].data, Number(q.jitter));
-        pushPoint(qosAnalysisChart.data.datasets[3].data, Number(q.packet_loss));
+        // Label sama-sama dipush ke ketiga chart
+        pushPoint(qosThroughputChart.data.labels, nextLabel);
+        pushPoint(qosDelayJitterChart.data.labels, nextLabel);
+        pushPoint(qosLossChart.data.labels, nextLabel);
+
+        pushPoint(qosThroughputChart.data.datasets[0].data, Number(q.throughput));
+
+        pushPoint(qosDelayJitterChart.data.datasets[0].data, Number(q.delay));
+        pushPoint(qosDelayJitterChart.data.datasets[1].data, Number(q.jitter));
+
+        pushPoint(qosLossChart.data.datasets[0].data, Number(q.packet_loss));
 
         // update('none') = tanpa animasi geser ulang seluruh chart tiap kali data masuk
-        qosAnalysisChart.update('none');
+        qosThroughputChart.update('none');
+        qosDelayJitterChart.update('none');
+        qosLossChart.update('none');
     });
 })();
 </script>

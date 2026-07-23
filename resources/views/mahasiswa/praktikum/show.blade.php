@@ -76,6 +76,10 @@
                         Packet
                     </th>
 
+                    <th class="bg-purple-50 text-purple-700 px-4 py-3 border border-purple-100 whitespace-nowrap font-semibold">
+                        ED
+                    </th>
+
                     <th class="sticky left-0 z-20 bg-slate-100 text-slate-600 px-4 py-3 border border-slate-200 text-left whitespace-nowrap font-semibold">
                         Waktu
                     </th>
@@ -107,6 +111,10 @@
                         {{-- Packet ID --}}
                         <td class="px-4 py-2 border border-slate-100 text-center font-bold text-amber-700">
                             {{ $row['packet'] ?? '-' }}
+                        </td>
+
+                        <td class="px-4 py-2 border border-slate-100 text-center font-semibold text-purple-700">
+                            {{ $row['device'] ?? '-' }}
                         </td>
 
                         <td class="sticky left-0 bg-inherit px-4 py-2 border border-slate-100 whitespace-nowrap font-medium text-slate-700">
