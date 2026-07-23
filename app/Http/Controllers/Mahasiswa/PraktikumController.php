@@ -186,16 +186,16 @@ class PraktikumController extends Controller
         $actuatorData = collect($readings)->only($actuatorColumns->all())->all();
 
         $rows[] = [
-            'timestamp'  => $log->created_at,
-            'packet'     => $log->packet_id,
-            'device'     => $log->device->nama_device ?? '-',
-            'sensor'     => $sensorData,
-            'aktuator'   => $actuatorData,
-            'delay'      => $log->delay,
-            'jitter'     => $log->jitter,
-            'throughput' => $log->throughput,
-            'loss'       => $log->packet_loss,
-        ];
+    'timestamp'  => $log->created_at,
+    'packet'     => $log->packet_id,
+    'device'     => $log->device->nama_device ?? '-',
+    'sensor'     => $log->readings['sensor'] ?? [],
+    'aktuator'   => $log->readings['aktuator'] ?? [],
+    'delay'      => $log->delay,
+    'jitter'     => $log->jitter,
+    'throughput' => $log->throughput,
+    'loss'       => $log->packet_loss,
+];
     }
 
     $lastLogTime = $session->sensorLogs->max('created_at');
@@ -343,16 +343,16 @@ foreach ($logs as $log) {
     $actuatorData = collect($readings)->only($actuatorColumns->all())->all();
 
     $rows[] = [
-        'timestamp'  => $log->created_at,
-        'packet'     => $log->packet_id,
-        'device'     => $log->device->nama_device ?? '-',   // <-- NEW: buat kolom ED
-        'sensor'     => $sensorData,
-        'aktuator'   => $actuatorData,
-        'delay'      => $log->delay,
-        'jitter'     => $log->jitter,
-        'throughput' => $log->throughput,
-        'loss'       => $log->packet_loss,
-    ];
+    'timestamp'  => $log->created_at,
+    'packet'     => $log->packet_id,
+    'device'     => $log->device->nama_device ?? '-',
+    'sensor'     => $log->readings['sensor'] ?? [],
+    'aktuator'   => $log->readings['aktuator'] ?? [],
+    'delay'      => $log->delay,
+    'jitter'     => $log->jitter,
+    'throughput' => $log->throughput,
+    'loss'       => $log->packet_loss,
+];
 }
 
     $sensorColumns = $session->sensorLogs->map(fn ($l) => $l->sensor->parameter ?? $l->sensor->nama_sensor)->unique()->values();
