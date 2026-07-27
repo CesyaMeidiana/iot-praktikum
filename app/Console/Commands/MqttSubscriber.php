@@ -163,15 +163,20 @@ class MqttSubscriber extends Command
         // bakal null, dan QoS-nya juga kesimpen null - gak nyasar ke sesi
         // orang lain yang kebetulan rentang waktunya numpuk.
         if (isset($data['qos'])) {
+            // PENTING: kunci unik HARUS ikut praktikum_session_id juga, bukan
+            // cuma device_id + packet. Kalau enggak, sesi BARU yang device-nya
+            // sama dan kebetulan nomor packet-nya sama (mis. sama-sama mulai
+            // dari 1) bakal nimpa baris QoS punya sesi LAMA -> data sesi lama
+            // hilang/kosong padahal sebelumnya ada.
             QosLog::updateOrCreate(
 
     [
-        'device_id' => $device->id,
-        'packet'    => $data['packetID'] ?? 0,
+        'device_id'            => $device->id,
+        'praktikum_session_id' => $sessionId,
+        'packet'               => $data['packetID'] ?? 0,
     ],
 
     [
-        'praktikum_session_id' => $sessionId,
         'delay'       => $data['qos']['delay'] ?? 0,
         'jitter'      => $data['qos']['jitter'] ?? 0,
         'throughput'  => $data['qos']['throughput'] ?? 0,
