@@ -466,6 +466,9 @@ $praktikums = PraktikumSession::where('user_id', $user->id)
 $selectedPraktikum = request('praktikum')
     ?? optional($praktikums->first())->id;
 
+    $selectedDevice = request('device');
+    $deviceOptions = collect();
+
 $qosChartSeries = [
     'labels' => [],
     'throughput' => [],
@@ -476,14 +479,32 @@ $qosChartSeries = [
 
 if ($selectedPraktikum) {
 
-    $praktikum = PraktikumSession::find($selectedPraktikum);
+    $praktikum = PraktikumSession::with('devices')->find($selectedPraktikum);
 
-    if ($praktikum) {
+if ($praktikum) {
 
-        $logs = $praktikum->getQosLogs()
-            ->sortBy('packet')
-            ->unique('packet')
-            ->values();
+    $deviceOptions = $praktikum->devices;
+
+    // Kalau device yang lagi dipilih ternyata bukan milik praktikum yang
+    // sekarang aktif (misal: user baru aja ganti dropdown praktikum, tapi
+    // dropdown device masih bawa value lama dari praktikum sebelumnya),
+    // reset ke device pertama biar gak ke-filter jadi kosong.
+    $validDeviceIds = $deviceOptions->pluck('id')->map(fn ($id) => (string) $id);
+
+    if (!$selectedDevice || !$validDeviceIds->contains((string) $selectedDevice)) {
+        $selectedDevice = optional($deviceOptions->first())->id;
+    }
+
+    $logs = $praktikum->getQosLogs();
+
+    if ($selectedDevice) {
+        $logs = $logs->where('device_id', $selectedDevice);
+    }
+
+    $logs = $logs
+        ->sortBy('packet')
+        ->unique('packet')
+        ->values();
 
         $qosChartSeries = [
 
@@ -510,61 +531,10 @@ if ($selectedPraktikum) {
 return compact(
     'praktikums',
     'selectedPraktikum',
+    'deviceOptions',
+    'selectedDevice',
     'qosChartSeries'
 );
-
-    $selectedJarak = request('jarak', $qosJarakOptions->first());
-    $chartSession = $filteredSessions
-    ->where('distance', $selectedJarak)
-    ->sortByDesc('created_at')
-    ->first();
-
-$qosChartSeries = [
-    'labels' => [],
-    'throughput' => [],
-    'delay' => [],
-    'jitter' => [],
-    'loss' => [],
-];
-
-if ($chartSession) {
-
-    $logs = $chartSession->getQosLogs()
-    ->sortBy('packet')
-    ->unique('packet')
-    ->values();
-
-$count = $logs->count();
-
-if ($count > 15) {
-    $logs = $logs->slice($count - 15)->values();
-}
-
-    $qosChartSeries['labels'] = $logs
-        ->pluck('packet')
-        ->map(fn($p) => 'P'.$p)
-        ->all();
-
-    $qosChartSeries['throughput'] = $logs->pluck('throughput')->all();
-
-    $qosChartSeries['delay'] = $logs
-        ->map(fn($l)=>max(0,$l->delay-5))
-        ->all();
-
-    $qosChartSeries['jitter'] = $logs
-        ->map(fn($l)=>max(0,$l->jitter-5))
-        ->all();
-
-    $qosChartSeries['loss'] = $logs
-        ->pluck('packet_loss')
-        ->all();
-}
-
-    return compact(
-        'qosNodeOptions', 'qosKondisiOptions', 'qosJarakOptions',
-        'selectedNode', 'selectedKondisi', 'selectedJarak',
-        'qosResultRows', 'qosChartSeries'
-    );
 }
 
 private function qosKategori($delay, $loss): array
