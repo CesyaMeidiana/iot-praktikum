@@ -63,7 +63,7 @@ public function getQosLogs()
     // Catatan: ini cuma bakal nangkep QoS yang direkam SETELAH fix ini
     // dipasang. Data QoS lama (sebelum kolom praktikum_session_id ada)
     // tetap null session-nya dan gak akan muncul lagi di sesi manapun.
-    return $this->qosLogs()->get();
+    return $this->monitoringLogs()->get();
 }
 
 public function classroom()

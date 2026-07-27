@@ -502,22 +502,22 @@ if ($praktikum) {
     }
 
     $logs = $logs
-        ->sortBy('packet')
-        ->unique('packet')
+        ->sortBy('packet_id')
+        ->unique('packet_id')
         ->values();
 
         $qosChartSeries = [
 
-            'labels' => $logs->pluck('packet')->all(),
+            'labels' => $logs->pluck('packet_id')->all(),
 
             'throughput' => $logs->pluck('throughput')->all(),
 
             'delay' => $logs
-                ->map(fn($l)=>max(0,$l->delay-5000))
+                ->pluck('delay')
                 ->all(),
 
             'jitter' => $logs
-                ->map(fn($l)=>max(0,$l->jitter-5000))
+                ->pluck('jitter')
                 ->all(),
 
             'loss' => $logs
