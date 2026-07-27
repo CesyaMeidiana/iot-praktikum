@@ -244,7 +244,7 @@
     // Ini BUKAN realtime dari MQTT, cuma "memutar ulang" data yang
     // sudah di-fetch sekali saat halaman di-load — jadi aman dan
     // gak melanggar aturan "chart historis gak boleh dengar event
-    // realtime-update" di catatan bawah ini.
+    // realtime-update" di catatan bawah ini....
     // ==========================================================
     if (fullLabels.length > WINDOW_SIZE) {
         const maxStart = fullLabels.length - WINDOW_SIZE;
