@@ -61,7 +61,7 @@
                             x: {
                                 title: {
                                     display: true,
-                                    text: 'Waktu (HH:mm)'
+                                    text: 'Waktu'
                                 },
                                 grid: {
                                     display: false
