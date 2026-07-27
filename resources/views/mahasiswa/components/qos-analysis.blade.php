@@ -93,7 +93,7 @@
     const WINDOW_SIZE = 15;
 
     // Seberapa cepat window geser (ms). Makin kecil, makin cepat jalan.
-    const SLIDE_INTERVAL_MS = 800;
+    const SLIDE_INTERVAL_MS = 2500;
 
     const fullLabels     = @json($qosChartSeries['labels'] ?? []);
     const fullThroughput = @json($qosChartSeries['throughput'] ?? []);
@@ -121,14 +121,29 @@
     if (!throughputCanvas || !delayJitterCanvas || !lossCanvas || typeof Chart === 'undefined') return;
 
     const baseOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: { duration: 300 },
-        interaction: { mode: 'index', intersect: false },
-        plugins: {
-            legend: { position: 'bottom', labels: { boxWidth: 10, padding: 16 } },
-        },
-    };
+    responsive: true,
+    maintainAspectRatio: false,
+
+    animation: {
+        duration: 1200,
+        easing: 'easeInOutQuart'
+    },
+
+    interaction: {
+        mode: 'index',
+        intersect: false
+    },
+
+    plugins: {
+        legend: {
+            position: 'bottom',
+            labels: {
+                boxWidth: 10,
+                padding: 16
+            }
+        }
+    }
+};
 
     // Chart 1: Throughput
     const qosThroughputChart = new Chart(throughputCanvas, {
@@ -141,9 +156,10 @@
                     data: throughput,
                     borderColor: '#2563eb',
                     backgroundColor: 'rgba(37,99,235,0.08)',
-                    tension: 0.35,
+                    tension: 0.55,
                     fill: true,
-                    pointRadius: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
                 },
             ],
         },
@@ -265,16 +281,16 @@
 
             qosThroughputChart.data.labels = newLabels;
             qosThroughputChart.data.datasets[0].data = newThroughput;
-            qosThroughputChart.update();
+            qosThroughputChart.update('active');
 
             qosDelayJitterChart.data.labels = newLabels;
             qosDelayJitterChart.data.datasets[0].data = newDelay;
             qosDelayJitterChart.data.datasets[1].data = newJitter;
-            qosDelayJitterChart.update();
+            qosDelayJitterChart.update('active');
 
             qosLossChart.data.labels = newLabels;
             qosLossChart.data.datasets[0].data = newLoss;
-            qosLossChart.update();
+            qosLossChart.update('active');
         }, SLIDE_INTERVAL_MS);
     }
 })();
