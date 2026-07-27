@@ -6,16 +6,44 @@
         <h2 class="text-xl font-bold">Grafik QoS Praktikum</h2>
 
         @if(($praktikums ?? collect())->count())
-            <form method="GET" class="flex items-center">
-                <select name="praktikum" onchange="this.form.submit()"
-                    class="text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    @foreach($praktikums as $p)
-                        <option value="{{ $p->id }}" {{ (string) ($selectedPraktikum ?? '') === (string) $p->id ? 'selected' : '' }}>
-                            Praktikum #{{ $p->id }} - {{ optional($p->created_at)->format('d M Y') }}
-                        </option>
-                    @endforeach
-                </select>
-            </form>
+           <form method="GET" class="flex items-center gap-3">
+
+    <select
+        name="praktikum"
+        onchange="this.form.submit()"
+        class="text-sm border border-slate-200 rounded-lg px-3 py-2">
+
+        @foreach($praktikums as $p)
+            <option
+                value="{{ $p->id }}"
+                {{ (string)$selectedPraktikum === (string)$p->id ? 'selected' : '' }}>
+                Praktikum #{{ $p->id }}
+            </option>
+        @endforeach
+
+    </select>
+
+    <select
+        name="device"
+        onchange="this.form.submit()"
+        class="text-sm border border-slate-200 rounded-lg px-3 py-2">
+
+        @foreach($deviceOptions as $device)
+
+            <option
+                value="{{ $device->id }}"
+                {{ (string)$selectedDevice === (string)$device->id ? 'selected' : '' }}>
+
+                {{ $device->nama_device }}
+
+            </option>
+
+        @endforeach
+
+    </select>
+
+</form>
+
         @endif
     </div>
 </div>
