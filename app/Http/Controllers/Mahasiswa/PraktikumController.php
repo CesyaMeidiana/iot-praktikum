@@ -85,6 +85,13 @@ class PraktikumController extends Controller
             );
         }
 
+        // Dibuat status 'pending' dulu (BUKAN langsung 'running'), supaya
+        // device baru dianggap "diklaim" sesi ini setelah pivot devices-nya
+        // beneran ke-sync. Kalau status 'running' di-set duluan sebelum
+        // sync, ada celah waktu (walau cuma sepersekian detik) di mana
+        // MqttSubscriber bisa nerima data device ini dan nyari sesi
+        // running yang punya device itu -> belum ketemu -> data kesimpen
+        // dengan praktikum_session_id NULL, ilang dari histori sesi ini.
         $session = PraktikumSession::create([
 
             'user_id' => Auth::id(),
@@ -101,7 +108,7 @@ class PraktikumController extends Controller
 
             'distance' => $request->distance,
 
-            'status' => 'running',
+            'status' => 'pending',
 
             'started_at' => now(),
 
@@ -110,6 +117,9 @@ class PraktikumController extends Controller
         $session->devices()->sync(
             (array) $request->devices
         );
+
+        // Baru sekarang set running, SETELAH pivot device beneran tersimpan.
+        $session->update(['status' => 'running']);
 
         Auth::user()->notify(new PraktikumSessionStarted($session));
         Notification::send(User::role('Admin')->get(), new AdminPraktikumStarted($session));
