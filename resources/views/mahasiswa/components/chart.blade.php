@@ -44,7 +44,9 @@
                             borderColor: series.color,
                             backgroundColor: series.color + '22',
                             borderWidth: 2,
-                            pointRadius: 2,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: series.color,
                             tension: 0.35,
                             fill: true,
                         }]
@@ -57,12 +59,32 @@
                         },
                         scales: {
                             x: {
-                                grid: { display: false },
-                                ticks: { font: { size: 10 } }
+                                title: {
+                                    display: true,
+                                    text: 'Waktu (HH:mm)'
+                                },
+                                grid: {
+                                    display: false
+                                },
+                                ticks: {
+                                    font: {
+                                        size: 10
+                                    }
+                                }
                             },
                             y: {
-                                grid: { color: '#f1f5f9' },
-                                ticks: { font: { size: 10 } }
+                                title: {
+                                    display: true,
+                                    text: series.unit
+                                },
+                                grid: {
+                                    color: '#f1f5f9'
+                                },
+                                ticks: {
+                                    font: {
+                                        size: 10
+                                    }
+                                }
                             }
                         }
                     }
@@ -81,7 +103,8 @@ document.addEventListener("realtime-update", function (e) {
     data.devices.forEach(function (device) {
         device.sensor.forEach(function (sensor) {
             const now = new Date().toLocaleTimeString("id-ID", {
-                hour: "2-digit", minute: "2-digit", second: "2-digit"
+                hour: "2-digit",
+                minute: "2-digit"
             });
 
             // Coba match ke chart berdasarkan nama sensor

@@ -343,8 +343,8 @@ $selectedPraktikum = request('praktikum')
     ];
 
     $bucketCount   = 6;
-    $windowMinutes = 15;
-    $bucketMinutes = $windowMinutes / $bucketCount; // 2.5 menit per titik
+    $windowMinutes = 6;
+    $bucketMinutes = 1;
 
     $allLogs = SensorLog::where('praktikum_session_id', $praktikumSessionId)
         ->with('sensor')
@@ -378,7 +378,9 @@ $selectedPraktikum = request('praktikum')
 
             $buckets[] = [
                 'label' => $bucketEnd->format('H:i'),
-                'value' => $inBucket->isNotEmpty() ? round($inBucket->avg('value'), 2) : null,
+                'value' => $inBucket->isNotEmpty()
+                    ? round($inBucket->last()->value, 2)
+                    : null,
             ];
         }
 

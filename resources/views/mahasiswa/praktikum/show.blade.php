@@ -10,7 +10,10 @@
 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6">
 
     <div class="flex justify-between items-center mb-6">
-        <h3 class="text-xl font-bold text-slate-800">Status Praktikum</h3>
+        <h3 class="text-xl font-bold text-slate-800">
+            Status Praktikum
+            <span class="text-sm font-normal text-slate-400 ml-2">Praktikum #{{ $session->id }}</span>
+        </h3>
         @if($session->status=='running')
             <span class="bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-semibold">Sedang Berjalan</span>
         @else
