@@ -232,49 +232,13 @@
         },
     });
 
-    // Nomor packet terakhir yang sudah tampil, dipakai buat generate label kalau
-    // payload realtime tidak menyertakan nomor packet-nya sendiri.
-    let packetCounter = 0;
-    for (const l of initialLabels) {
-        const n = parseInt(l, 10);
-        if (!isNaN(n) && n > packetCounter) packetCounter = n;
-    }
-
-    // Tambah satu titik baru ke dataset, dan buang titik paling lama
-    // kalau panjangnya sudah melebihi MAX_POINTS -> efek "geser".
-    function pushPoint(arr, value) {
-        arr.push(value);
-        if (arr.length > MAX_POINTS) {
-            arr.shift();
-        }
-    }
-
-    // Dengarkan event realtime yang sama dipakai komponen QoS lainnya (lihat qos.blade.php).
-    // e.detail.qos diharapkan berbentuk:
-    // { throughput, delay, jitter, packet_loss, packet? }
-    document.addEventListener('realtime-update', function (e) {
-        const q = e.detail && e.detail.qos;
-        if (!q) return;
-
-        packetCounter += 1;
-        const nextLabel = 'P' + (q.packet ?? packetCounter);
-
-        // Label sama-sama dipush ke ketiga chart
-        pushPoint(qosThroughputChart.data.labels, nextLabel);
-        pushPoint(qosDelayJitterChart.data.labels, nextLabel);
-        pushPoint(qosLossChart.data.labels, nextLabel);
-
-        pushPoint(qosThroughputChart.data.datasets[0].data, Number(q.throughput));
-
-        pushPoint(qosDelayJitterChart.data.datasets[0].data, Number(q.delay));
-        pushPoint(qosDelayJitterChart.data.datasets[1].data, Number(q.jitter));
-
-        pushPoint(qosLossChart.data.datasets[0].data, Number(q.packet_loss));
-
-        // update('none') = tanpa animasi geser ulang seluruh chart tiap kali data masuk
-        qosThroughputChart.update('none');
-        qosDelayJitterChart.update('none');
-        qosLossChart.update('none');
-    });
+    // CATATAN: chart di halaman ini cuma nampilin praktikum yang statusnya
+    // "finished" (lihat buildQosAnalysis() -> ->where('status', 'finished')).
+    // Artinya data di sini historis/statis dan TIDAK BOLEH ikut dengar
+    // event 'realtime-update' (itu punya komponen lain seperti tabel
+    // "Live" di qos.blade.php buat praktikum yang masih berjalan).
+    // Kalau listener itu dipasang di sini, chart historis ini bakal ikut
+    // numpuk titik baru terus-menerus dan bikin label packet keulang
+    // (P1, P1, P1, ...) padahal datanya udah final / gak berubah lagi.
 })();
 </script>
