@@ -89,24 +89,30 @@
 (function () {
     // Berapa banyak titik yang ditampilkan sekaligus di grafik.
     // Kalau data baru masuk dan sudah melebihi ini, titik paling lama akan digeser/dibuang.
-    const MAX_POINTS = 15;
+    // Berapa titik yang kelihatan sekaligus di layar
+    const WINDOW_SIZE = 15;
 
-    const initialLabels     = @json($qosChartSeries['labels'] ?? []);
-    const initialThroughput = @json($qosChartSeries['throughput'] ?? []);
-    const initialDelay      = @json($qosChartSeries['delay'] ?? []);
-    const initialJitter     = @json($qosChartSeries['jitter'] ?? []);
-    const initialLoss       = @json($qosChartSeries['loss'] ?? []);
+    // Seberapa cepat window geser (ms). Makin kecil, makin cepat jalan.
+    const SLIDE_INTERVAL_MS = 800;
 
-    // Potong data awal supaya konsisten dengan window realtime (maks MAX_POINTS titik)
-    function trim(arr) {
-        return arr.length > MAX_POINTS ? arr.slice(arr.length - MAX_POINTS) : arr;
+    const fullLabels     = @json($qosChartSeries['labels'] ?? []);
+    const fullThroughput = @json($qosChartSeries['throughput'] ?? []);
+    const fullDelay      = @json($qosChartSeries['delay'] ?? []);
+    const fullJitter     = @json($qosChartSeries['jitter'] ?? []);
+    const fullLoss       = @json($qosChartSeries['loss'] ?? []);
+
+    // Index awal window yang lagi ditampilkan (0 = mulai dari paket pertama)
+    let windowStart = 0;
+
+    function windowSlice(arr) {
+        return arr.slice(windowStart, windowStart + WINDOW_SIZE);
     }
 
-    const labels     = trim(initialLabels).map((l) => 'P' + l);
-    const throughput = trim(initialThroughput);
-    const delay      = trim(initialDelay);
-    const jitter     = trim(initialJitter);
-    const loss       = trim(initialLoss);
+    const labels     = windowSlice(fullLabels).map((l) => 'P' + l);
+    const throughput = windowSlice(fullThroughput);
+    const delay      = windowSlice(fullDelay);
+    const jitter     = windowSlice(fullJitter);
+    const loss       = windowSlice(fullLoss);
 
     const throughputCanvas   = document.getElementById('qosThroughputChart');
     const delayJitterCanvas  = document.getElementById('qosDelayJitterChart');
@@ -232,13 +238,44 @@
         },
     });
 
-    // CATATAN: chart di halaman ini cuma nampilin praktikum yang statusnya
-    // "finished" (lihat buildQosAnalysis() -> ->where('status', 'finished')).
-    // Artinya data di sini historis/statis dan TIDAK BOLEH ikut dengar
-    // event 'realtime-update' (itu punya komponen lain seperti tabel
-    // "Live" di qos.blade.php buat praktikum yang masih berjalan).
-    // Kalau listener itu dipasang di sini, chart historis ini bakal ikut
-    // numpuk titik baru terus-menerus dan bikin label packet keulang
-    // (P1, P1, P1, ...) padahal datanya udah final / gak berubah lagi.
+    // ==========================================================
+    // Animasi window geser: tiap SLIDE_INTERVAL_MS, window maju
+    // 1 titik (1-10 -> 2-11 -> 3-12 -> ... sampai data terakhir).
+    // Ini BUKAN realtime dari MQTT, cuma "memutar ulang" data yang
+    // sudah di-fetch sekali saat halaman di-load — jadi aman dan
+    // gak melanggar aturan "chart historis gak boleh dengar event
+    // realtime-update" di catatan bawah ini.
+    // ==========================================================
+    if (fullLabels.length > WINDOW_SIZE) {
+        const maxStart = fullLabels.length - WINDOW_SIZE;
+
+        const slideTimer = setInterval(() => {
+            windowStart += 1;
+
+            if (windowStart > maxStart) {
+                clearInterval(slideTimer);
+                return;
+            }
+
+            const newLabels     = windowSlice(fullLabels).map((l) => 'P' + l);
+            const newThroughput = windowSlice(fullThroughput);
+            const newDelay      = windowSlice(fullDelay);
+            const newJitter     = windowSlice(fullJitter);
+            const newLoss       = windowSlice(fullLoss);
+
+            qosThroughputChart.data.labels = newLabels;
+            qosThroughputChart.data.datasets[0].data = newThroughput;
+            qosThroughputChart.update();
+
+            qosDelayJitterChart.data.labels = newLabels;
+            qosDelayJitterChart.data.datasets[0].data = newDelay;
+            qosDelayJitterChart.data.datasets[1].data = newJitter;
+            qosDelayJitterChart.update();
+
+            qosLossChart.data.labels = newLabels;
+            qosLossChart.data.datasets[0].data = newLoss;
+            qosLossChart.update();
+        }, SLIDE_INTERVAL_MS);
+    }
 })();
 </script>
